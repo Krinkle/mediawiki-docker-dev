@@ -1,5 +1,12 @@
 ## Instructions
 
+By default the below steps will install MediaWiki at `~/dev/mediawiki`
+and start a server for <http://default.web.mw.localhost:8080>.
+
+Many aspect of the container, including the port and MediaWiki path, can be customised
+by creating a `local.env` in this directory, in which to override one or more variables
+from `default.env`.
+
 ### Install
 
 #### 1) Install Docker & Docker Compose
@@ -8,7 +15,7 @@ https://docs.docker.com/compose/install/
 
 ###### Unix notes
 
-- You mostly want the docker-ce package not the docker package (please read the install instructions)
+- Use the `docker-ce` package, not the `docker` package (read their install instructions)
 - If you want to avoid logging in as root or sudo commands, you will have to add your user to the docker group:
 https://askubuntu.com/questions/477551/how-can-i-use-docker-without-sudo#477554
    - This does not mean your containers will not run as root. These are different settings not really used currently by this dev setup.
@@ -19,9 +26,9 @@ https://askubuntu.com/questions/477551/how-can-i-use-docker-without-sudo#477554
 git clone https://github.com/addshore/mediawiki-docker-dev.git
 ```
 
-#### 3) Clone MediaWiki Core & the Vector Skin (default skin)
+#### 3) Clone MediaWiki core & the Vector skin
 
-You can start without the skin but you will find that your MediaWiki instlal doesn't look very nice.
+You can start without the skin but you will find that your MediaWiki install doesn't look very nice.
 
 From [Wikimedia Gerrit](https://gerrit.wikimedia.org/r/#/admin/projects/mediawiki/core):
 
@@ -67,6 +74,8 @@ Alter any settings that you want to change, for example the install location of 
 
 **Create and start the Docker containers:**
 
+This includes setting up a default wiki @ http://default.web.mw.localhost:8080
+
 ```
 ./up
 ```
@@ -87,25 +96,12 @@ need to use `sudo ./hosts-sync` instead if the file is not writable by the shell
 
 ## Commands
 
-You can setup a small bash alias to make running the various commands much easier.
-An example is provided below:
-
-```bash
-alias mw-docker-dev='_(){ (cd /$GITPATH/github/addshore/mediawiki-docker-dev; ./$@) ;}; _'
-```
-
-Without such a bash alias you will have the run the scripts from within the mediawiki-docker-dev directory itself.
-
 ### Up
 
 Create and start containers.
 
-This includes setting up a default wiki @ http://default.web.mw.localhost:8080
-
-You can choose the spec of the system that the up command will set up by using a custom .env file called local.env and customizing the variables.
-
 ```
-mw-docker-dev up
+./up
 ```
 
 ### Stop
@@ -113,7 +109,7 @@ mw-docker-dev up
 Shuts down the containers. Databases and other volumes persist.
 
 ```
-mw-docker-dev stop
+./stop
 ```
 
 ### Start
@@ -121,7 +117,7 @@ mw-docker-dev stop
 Start (or restart) the containers, if things have already been created using `./up`.
 
 ```
-mw-docker-dev start
+./start
 ```
 
 ### Down
@@ -129,7 +125,7 @@ mw-docker-dev start
 Stop and delete the containers. Also removes databases and volumes.
 
 ```
-mw-docker-dev down
+./down
 ```
 
 ### Bash
@@ -141,7 +137,7 @@ If the containers are running you can use `./bash` to open up an interactive she
 This can be used to run PHPUnit tests, maintenance scripts, etc.
 
 ```
-mw-docker-dev bash
+./bash
 ```
 
 ### Add site
@@ -149,7 +145,7 @@ mw-docker-dev bash
 You can add a new site by subdomain name using the ./addsite command
 
 ```
-mw-docker-dev addsite enwiki
+./addsite enwiki
 ```
 
 ### Hosts file sync
@@ -159,14 +155,39 @@ shows which entries need to be added, and also tries to add them automatically
 if possible.
 
 ```
-mw-docker-dev hosts-sync
+./hosts-sync
+```
+
+### Update a wiki
+
+Run `git pull` in your the relevant Git repositories for MediaWiki core
+and extensions.
+
+If you need to apply schema changes after updating MediaWiki, or after
+installing additional extensions, you can follow the regular MediaWiki
+instructions. Just make sure you're on the web server when doing so.
+
+For example:
+
+```
+./bash
+root@web:/# cd /var/www/mediawiki
+root@web:mediawiki# php maintenance/update.php --wiki=default
 ```
 
 ### PHPUnit
 
+Be sure to set `--wiki=default`, this is a multi-wiki environment.
+
+For example:
+
 ```
-mw-docker-dev phpunit --wiki default //var/www/mediawiki/extensions/FileImporter/tests/phpunit
+./bash
+root@web:/# cd /var/www/mediawiki/tests/phpunit/
+root@web:phpunit# php phpunit.php --wiki=default includes/MessageTest.php
 ```
+
+See also <https://www.mediawiki.org/wiki/Manual:PHP_unit_testing>
 
 ### QUnit
 
